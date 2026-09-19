@@ -1,0 +1,289 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Dashboard</title>
+<style>
+	:root {
+		--sidebar-bg: #3a3a3a;
+		--sidebar-text: #f2f2f2;
+		--sidebar-muted: #b5b5b5;
+		--bg: #f2f2f2;
+		--card-bg: #ffffff;
+		--stat-bg: #e2e2e2;
+		--text-dark: #333333;
+		--border: #cfcfcf;
+		--accent: #4a90d9;
+	}
+
+	* { box-sizing: border-box; }
+
+	html, body {
+		height: 100%;
+		margin: 0;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		background: var(--card-bg);
+		color: var(--text-dark);
+	}
+
+	.layout {
+		display: flex;
+		min-height: 100vh;
+	}
+
+	/* Sidebar */
+	.sidebar {
+		width: 190px;
+		flex-shrink: 0;
+		background: var(--sidebar-bg);
+		color: var(--sidebar-text);
+		display: flex;
+		flex-direction: column;
+		padding: 24px 20px;
+	}
+
+	.brand {
+		font-size: 1.1rem;
+		font-weight: 600;
+		margin-bottom: 40px;
+	}
+
+	.nav {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		flex: 1;
+	}
+
+	.nav-item {
+		background: none;
+		border: none;
+		color: var(--sidebar-text);
+		font-size: 1rem;
+		text-align: left;
+		padding: 6px 0;
+		cursor: pointer;
+		font-family: inherit;
+	}
+
+	.nav-item:hover {
+		color: var(--accent);
+	}
+
+	.nav-item.active {
+		font-weight: 600;
+		color: var(--accent);
+	}
+
+	.username {
+		font-size: 0.95rem;
+		color: var(--sidebar-muted);
+		padding-top: 20px;
+	}
+
+	/* Main content */
+	.main {
+		flex: 1;
+		padding: 32px 40px;
+	}
+
+	.welcome {
+		font-size: 1.3rem;
+		color: #555;
+		margin: 0 0 28px 0;
+	}
+
+	.welcome strong {
+		color: #222;
+	}
+
+	.stats-row {
+		display: flex;
+		gap: 24px;
+		margin-bottom: 40px;
+		flex-wrap: wrap;
+	}
+
+	.stat-card {
+		background: var(--stat-bg);
+		border-radius: 24px;
+		padding: 28px 32px;
+		flex: 1;
+		min-width: 160px;
+		text-align: center;
+		font-size: 1.05rem;
+		color: #444;
+		font-weight: 500;
+	}
+
+	.stat-card .value {
+		display: block;
+		font-size: 1.6rem;
+		font-weight: 700;
+		color: #222;
+		margin-bottom: 6px;
+	}
+
+	.section-title {
+		font-size: 1.1rem;
+		color: #444;
+		margin-bottom: 18px;
+	}
+
+	.cards-row {
+		display: flex;
+		gap: 24px;
+		flex-wrap: wrap;
+	}
+
+	.stock-card {
+		width: 240px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: #fff;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 18px;
+		transition: box-shadow 0.15s ease, transform 0.15s ease;
+		font-family: inherit;
+		text-align: left;
+	}
+
+	.stock-card:hover {
+		box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+		transform: translateY(-2px);
+	}
+
+	.stock-card .icon {
+		font-size: 1.4rem;
+	}
+
+	.stock-card .ticker {
+		font-weight: 700;
+		font-size: 1.05rem;
+		color: #222;
+	}
+
+	.stock-card .desc {
+		font-size: 0.85rem;
+		color: #777;
+		line-height: 1.4;
+	}
+
+	@media (max-width: 720px) {
+		.layout { flex-direction: column; }
+		.sidebar { width: 100%; flex-direction: row; align-items: center; padding: 16px 20px; }
+		.nav { flex-direction: row; gap: 20px; }
+		.username { padding-top: 0; margin-left: auto; }
+		.main { padding: 24px 20px; }
+		.stock-card { width: 100%; }
+	}
+</style>
+</head>
+<body>
+
+<div class="layout">
+		<aside class="sidebar">
+			<div class="brand">Finance</div>
+			<nav class="nav">
+				<button class="nav-item active" data-page="Home">Home</button>
+				<button class="nav-item" data-page="Habits">Habits</button>
+				<button class="nav-item" data-page="Simulation">Simulation</button>
+			</nav>
+			<div class="username" id="username">Username</div>
+		</aside>
+
+		<main class="main">
+			<p class="welcome">Welcome, <strong id="welcome-name">User</strong></p>
+
+			<div class="stats-row">
+				<div class="stat-card">
+					<span class="value" id="money-saved">$0</span>
+					Money saved
+				</div>
+				<div class="stat-card">
+					<span class="value" id="habits-learned">0</span>
+					Habits learned
+				</div>
+				<div class="stat-card">
+					<span class="value" id="total-hours">0</span>
+					Total hours
+				</div>
+			</div>
+
+			<h2 class="section-title">Learn about stocks</h2>
+			<div class="cards-row" id="stock-cards">
+				<!-- stock cards injected by JS -->
+			</div>
+		</main>
+	</div>
+	<script>
+		const userData = {
+			name: "User",
+			moneySaved: 1240,
+			habitsLearned: 6,
+			totalHours: 38
+		};
+
+		const stockTopics = [
+			{ icon: "📈", ticker: "Stocks 101", desc: "What a share actually is, and how buying one works" },
+			{ icon: "🕯️", ticker: "Reading Charts", desc: "Candlesticks, trends, and what the lines mean" },
+			{ icon: "🥚", ticker: "Diversifying", desc: "Don't put all your eggs in one basket" }
+		];
+
+		function formatCurrency(amount) {
+			return amount.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+		}
+
+		function renderStats() {
+			document.getElementById("welcome-name").textContent = userData.name;
+			document.getElementById("username").textContent = userData.name;
+			document.getElementById("money-saved").textContent = formatCurrency(userData.moneySaved);
+			document.getElementById("habits-learned").textContent = userData.habitsLearned;
+			document.getElementById("total-hours").textContent = userData.totalHours;
+		}
+
+		function renderStockCards() {
+			const container = document.getElementById("stock-cards");
+			container.innerHTML = "";
+
+			stockTopics.forEach((topic) => {
+				const card = document.createElement("button");
+				card.className = "stock-card";
+				card.innerHTML = `
+					<span class="icon">${topic.icon}</span>
+					<span class="ticker">${topic.ticker}</span>
+					<span class="desc">${topic.desc}</span>
+				`;
+				card.addEventListener("click", () => {
+					alert(`Opening lesson: ${topic.ticker}`);
+				});
+				container.appendChild(card);
+			});
+		}
+
+		function setupNav() {
+			const navItems = document.querySelectorAll(".nav-item");
+			navItems.forEach((item) => {
+				item.addEventListener("click", () => {
+					navItems.forEach((i) => i.classList.remove("active"));
+					item.classList.add("active");
+					// Hook up real page switching here — e.g. showing/hiding sections
+					console.log(`Navigated to: ${item.dataset.page}`);
+				});
+			});
+		}
+
+		document.addEventListener("DOMContentLoaded", () => {
+			renderStats();
+			renderStockCards();
+			setupNav();
+		});
+
+	</script>
+
+<script src="script.js"></script>
+
+
+</body></html>

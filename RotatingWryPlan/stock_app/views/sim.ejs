@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Portfolio Dashboard</title>
+<link rel="stylesheet" href="sim.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="cards-row" id="cardsRow"></div>
+
+<div class="main-grid">
+	<div class="table-card">
+		<table>
+			<thead>
+				<tr>
+					<th>SYMBOL</th><th>QTY</th><th>PRICE PAID</th><th>LAST PRICE</th>
+					<th>DAY'S CHG</th><th>P/L</th><th>P/L %</th><th>MKT VALUE (USD)</th><th>ACTIONS</th>
+				</tr>
+			</thead>
+			<tbody id="tableBody"></tbody>
+		</table>
+	</div>
+
+	<div class="side-panel">
+		<div class="toggle-grid">
+			<button class="toggle-btn">Asset Class</button>
+			<button class="toggle-btn">Industry</button>
+			<button class="toggle-btn active">Symbols</button>
+			<button class="toggle-btn">Market Cap</button>
+		</div>
+		<div class="donut-wrap">
+			<canvas id="donutChart"></canvas>
+		</div>
+		<div class="legend" id="legend"></div>
+		<div class="pager">
+			<span>&#8249;</span> 1/4 <span>&#8250;</span>
+		</div>
+	</div>
+	<p> <%= data["c"]  %> </p>
+</div>
+
+<script>
+// const stocks = [
+// 	// {sym:"AAPL", name:"Apple Inc", price:182.39, chg:-1.18, chgPct:-2.18, pricePaid:191.22, qty:100, ret:-9.15, color:"#8a90a3"},
+// 	// {sym:"BAC", name:"Bank Of America Corporation", price:38.56, chg:-0.73, chgPct:-0.28, pricePaid:33.34, qty:100, ret:8.01, color:"#e0453f"},
+// 	// {sym:"GOOG", name:"Alphabet Inc (Google) Clas...", price:169.49, chg:-1.22, chgPct:-2.99, pricePaid:153.94, qty:100, ret:-3.55, color:"#f2b705"},
+// 	// {sym:"MCD", name:"McDonald's Corporation", price:270.75, chg:1.04, chgPct:2.80, pricePaid:290.14, qty:100, ret:-3.98, color:"#e0453f"},
+// 	// {sym:"NFLX", name:"Netflix, Inc.", price:609.33, chg:-0.45, chgPct:2.76, pricePaid:572.52, qty:100, ret:8.01, color:"#1d1d1d"},
+// 	// {sym:"SPOT", name:"Spotify Techn...", price:294.62, chg:0, chgPct:0, pricePaid:216.78, qty:100, ret:0, color:"#1fa06b"},
+// ];
+	const stocks = [
+		{sym:"test", name: "test", price:<%= data["c"]  %>, chg:-1.9,chgPct:-2,pricePaid:<%= data["c"] %>, qty:100,ret:-2,color:"#f2b705" }
+	]
+
+const cardsRow = document.getElementById("cardsRow");
+stocks.forEach(s=>{
+	const up = s.chg >= 0;
+	cardsRow.innerHTML += `
+		<div class="stock-card">
+			<div class="top">
+				<div class="logo" style="background:${s.color}">${s.sym[0]}</div>
+				<div class="names">
+					<div class="sym">${s.sym}</div>
+					<div class="full-name">${s.name}</div>
+				</div>
+				<div class="menu">&#8942;</div>
+			</div>
+			<div class="price-line">
+				<span class="price">${s.price.toFixed(2)}</span>
+			</div>
+			<span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span>
+			<div class="stats">
+				<div>
+					<div class="stat-label">PRICE PAID</div>
+					<div class="stat-val">$${s.pricePaid.toFixed(2)}</div>
+				</div>
+				<div>
+					<div class="stat-label">QTY</div>
+					<div class="stat-val">${s.qty}</div>
+				</div>
+				<div>
+					<div class="stat-label">RETURN</div>
+					<div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div>
+				</div>
+			</div>
+		</div>`;
+});
+
+const holdings = [];
+		
+// <% port["stocks"].forEach(stock => { %>
+// 	<%	holdings.push({sym: stock.ticker, qty:100, paid:191.22, last:173.72, chg:0.00, pl:-1750.00, plPct:-9.15, mkt:17372.00}) %>
+	
+// <% }) %>	
+	 
+
+
+	
+
+const tbody = document.getElementById("tableBody");
+holdings.forEach(h=>{
+	const plClass = h.pl >= 0 ? 'pos' : 'neg';
+	tbody.innerHTML += `
+		<tr>
+			<td>
+				<div class="sym-cell">
+					<svg class="dot" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
+					<span class="sym-name">${h.sym}</span>
+				</div>
+			</td>
+			<td>${h.qty.toFixed(2)}</td>
+			<td>$${h.paid.toFixed(2)}</td>
+			<td>${h.last.toFixed(2)}</td>
+			<td>0.00</td>
+			<td class="${plClass}">${h.pl>0?'':''}${h.pl.toFixed(2)}</td>
+			<td class="${plClass}">${h.pl>0?'+':''}${h.plPct.toFixed(2)}%</td>
+			<td>${h.mkt.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+			<td class="actions-cell">&#8942;&#9776;&#128196;</td>
+		</tr>`;
+});
+
+// Donut chart
+const donutData = [
+	{label:"TSLA", value:12.7, color:"#5b4bdb"},
+	{label:"SPY", value:23.4, color:"#3b5bdb"},
+	{label:"...", value:7.3, color:"#4dd0e1"},
+	{label:"", value:11.8, color:"#5cd65c"},
+	{label:"", value:20.3, color:"#f2b705"},
+	{label:"", value:24.5, color:"#e0453f"},
+];
+
+new Chart(document.getElementById('donutChart'), {
+	type: 'doughnut',
+	data: {
+		labels: donutData.map(d=>d.label),
+		datasets: [{
+			data: donutData.map(d=>d.value),
+			backgroundColor: donutData.map(d=>d.color),
+			borderWidth: 2,
+			borderColor: "#fff"
+		}]
+	},
+	options: {
+		cutout: '65%',
+		plugins: { legend: { display:false } }
+	}
+});
+
+document.getElementById("legend").innerHTML = `
+	<span><i style="background:#5b4bdb"></i>TSLA</span>
+	<span><i style="background:#3b5bdb"></i>SPY</span>
+`;
+
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+	btn.addEventListener('click', ()=>{
+		document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+		btn.classList.add('active');
+	});
+});
+</script>
+</body>
+</html>
