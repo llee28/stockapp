@@ -1,23 +1,19 @@
 {
   "name": "stock_app",
-  "type": "module",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "type": "module",
+  "author": "pengui",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@massive.com/client-js": "^10.7.0",
+    "@massive.com/client-js": "^10.8.0",
+    "dotenv": "^18.0.1",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
-    "mongodb": "^7.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "^26.2.0",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "mongoose": "^9.10.1"
   }
 }

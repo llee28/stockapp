@@ -10,6 +10,11 @@
 
 <div class="cards-row" id="cardsRow"></div>
 
+<form action = "/sim" method = "POST">
+	<input name = "ticker" type = "text"></input>
+	<input type = "submit"></input>
+</form>
+
 <div class="main-grid">
 	<div class="table-card">
 		<table>
@@ -38,10 +43,43 @@
 			<span>&#8249;</span> 1/4 <span>&#8250;</span>
 		</div>
 	</div>
-	<p> <%= data["c"]  %> </p>
-</div>
-
+	<p> <%= data  %> </p>
+	<%# s is an object, data is a list of objects%>
+	
+	<% for (let s of data) { %>
+		<div class="stock-card">
+				<div class="top">
+					<div class="logo" style="background: <%= s.color %> "> </div>
+					<div class="names">
+						<div class="sym"> <%= s.sym %></div>
+						<div class="full-name"> <%= s.name %></div>
+					</div>
+					<div class="menu">&#8942;</div>
+				</div>
+				<div class="price-line">
+					<span class="price"> <%= s.o %></span>
+				</div>
+				<%# span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span> %>
+				<div class="stats">
+					<div>
+						<div class="stat-label">PRICE PAID</div>
+						<div class="stat-val"><%= s.o %></div>
+					</div>
+					<div>
+						<div class="stat-label">QTY</div>
+						<div class="stat-val"><%= s.v%></div>
+					</div>
+					<div>
+						<div class="stat-label">RETURN</div>
+						<%# <div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div> %>
+					</div>
+				</div>
+			</div>
+	</div>
+	<% } %> 
+	
 <script>
+	
 // const stocks = [
 // 	// {sym:"AAPL", name:"Apple Inc", price:182.39, chg:-1.18, chgPct:-2.18, pricePaid:191.22, qty:100, ret:-9.15, color:"#8a90a3"},
 // 	// {sym:"BAC", name:"Bank Of America Corporation", price:38.56, chg:-0.73, chgPct:-0.28, pricePaid:33.34, qty:100, ret:8.01, color:"#e0453f"},
@@ -50,14 +88,10 @@
 // 	// {sym:"NFLX", name:"Netflix, Inc.", price:609.33, chg:-0.45, chgPct:2.76, pricePaid:572.52, qty:100, ret:8.01, color:"#1d1d1d"},
 // 	// {sym:"SPOT", name:"Spotify Techn...", price:294.62, chg:0, chgPct:0, pricePaid:216.78, qty:100, ret:0, color:"#1fa06b"},
 // ];
-	const stocks = [
-		{sym:"test", name: "test", price:<%= data["c"]  %>, chg:-1.9,chgPct:-2,pricePaid:<%= data["c"] %>, qty:100,ret:-2,color:"#f2b705" }
-	]
+
 
 const cardsRow = document.getElementById("cardsRow");
-stocks.forEach(s=>{
-	const up = s.chg >= 0;
-	cardsRow.innerHTML += `
+
 		<div class="stock-card">
 			<div class="top">
 				<div class="logo" style="background:${s.color}">${s.sym[0]}</div>
@@ -85,15 +119,11 @@ stocks.forEach(s=>{
 					<div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div>
 				</div>
 			</div>
-		</div>`;
-});
+		</div>
 
 const holdings = [];
 		
-// <% port["stocks"].forEach(stock => { %>
-// 	<%	holdings.push({sym: stock.ticker, qty:100, paid:191.22, last:173.72, chg:0.00, pl:-1750.00, plPct:-9.15, mkt:17372.00}) %>
-	
-// <% }) %>	
+
 	 
 
 

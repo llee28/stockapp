@@ -1,7 +1,7 @@
 import express from "express"
+import 'dotenv/config';
 const app = express()
-import path from "path"
-const port = 3000
+app.use(express.urlencoded({extended:true}))
 const key = process.env.MASSIVE_API_KEY
 var portfolio = {
 	stocks:[
@@ -26,15 +26,6 @@ import {restClient} from '@massive.com/client-js'
 const rest = restClient(key, 'https://api.massive.com');
 var stock = ""
 
-import { MongoClient, ServerApiVersion } from 'mongodb'
-
-const client = new MongoClient(process.env.MONGODB_URI, {
-	serverApi: {
-		version: ServerApiVersion.v1,
-		strict: true,
-		deprecationErrors: true,
-	}
-});
 
 
 app.use(express.static("public"));
@@ -77,11 +68,11 @@ async function example_listTickers(){
 		console.error('An error happened:', e)
 	}
 }
-async function appleStats() {
+async function appleStats(a) {
 	try {
 		const response = await rest.getStocksAggregates(
 			{
-				stocksTicker: "AAPL",
+				stocksTicker: a,
 				multiplier: "1",
 				timespan: "day",
 				from: "2026-07-30",
@@ -99,30 +90,39 @@ async function appleStats() {
 }
 
 
-
-async function mong() {
-	try {
-		// Connect the client to the server	(optional starting in v4.7)
-		await client.connect();
-		// Send a ping to confirm a successful connection
-		await client.db("admin").command({ ping: 1 });
-		console.log("Pinged your deployment. You successfully connected to MongoDB!");
-	} finally {
-		// Ensures that the client will close when you finish/error
-		await client.close();
-	}
-}
 app.get('/', (req, res) => {
 	getApiData()
 	example_listTickers()
-	mong()
 	res.render("index")
 })
 
 app.get('/sim',async (req,res)=>{
-	var stockData = await appleStats()
-	console.log("data:", stockData)
-	res.render("sim",{data:stockData,port:portfolio})
+	var stockData = await appleStats("AAPL")
+	var nKey = "color"
+	stockData[nKey] = "blue"
+	nKey = "name"
+	stockData[nKey] = "apple"
+	
+	var stockData2 = []
+	stockData2.push(stockData)
+	
+	// add stuff to dictionary that is used in sim.ejs
+
+	
+	console.log("data:", stockData2)
+	res.render("sim",{data:stockData2,port:portfolio})
+})
+
+app.post('/sim',async (req,res) =>{
+	let info = req.body
+	var stockData = await appleStats(info["ticker"])
+	var nKey = "color"
+	stockData[nKey] = "blue"
+	nKey = "name"
+	stockData[nKey] = "apple"
+	var stockData2 = []
+	stockData2.push(stockData)
+	res.render("sim",{data:stockData2})
 })
 
 app.listen(3000, () => {
