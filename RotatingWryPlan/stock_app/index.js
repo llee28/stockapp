@@ -9,13 +9,15 @@ var portfolio = {
 			"ticker":"AAPL",
 			"own":15,
 			"cost basis":205,
-			"purchase date": new Date(2026,2,10,2,30)
+			"purchase date": new Date(2026,2,10,2,30),
+			"color": "blue",
 		},
 		{
 			"ticker":"SPCX",
 			"own":30,
 			"cost basis":150,
-			"purchase date": new Date(2026,2,10,2,31)
+			"purchase date": new Date(2026,2,10,2,31),
+			"color":"yellow",
 		},
 	]
 	
@@ -116,6 +118,7 @@ app.get('/sim',async (req,res)=>{
 app.post('/sim',async (req,res) =>{
 	let info = req.body
 	var stockData = await appleStats(info["ticker"])
+	console.log ("stockData post:",stockData)
 	var nKey = "color"
 	stockData[nKey] = "blue"
 	nKey = "name"

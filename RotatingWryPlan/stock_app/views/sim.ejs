@@ -18,13 +18,46 @@
 <div class="main-grid">
 	<div class="table-card">
 		<table>
+
+			<tbody id="tableBody">
+				<% for (let s of port["stocks"]) { %>
+					<div class="stock-card">
+					<div class="top">
+						<div class="logo" style="background: <%= s.color %> "> </div>
+						<div class="names">
+							<div class="sym"> <%= s.sym %></div> 
+							<div class="full-name"> <%= s.ticker %></div>
+						</div>
+						<div class="menu">&#8942;</div>
+					</div>
+					<div class="price-line">
+						<span class="price"> <%= s["cost basis"] %></span>
+					</div>
+					<%# span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span> %>
+					<div class="stats">
+						<div>
+							<div class="stat-label">PRICE PAID</div>
+							<div class="stat-val"><%= s["cost basis"] %></div>
+						</div>
+						<div>
+							<div class="stat-label">QTY</div>
+							<div class="stat-val"><%= s.own%></div>
+						</div>
+						<div>
+							<div class="stat-label">RETURN</div>
+							<%# <div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div> %>
+						</div>
+					</div>
+				<% } %> 
+			</tbody>
+
 			<thead>
 				<tr>
 					<th>SYMBOL</th><th>QTY</th><th>PRICE PAID</th><th>LAST PRICE</th>
 					<th>DAY'S CHG</th><th>P/L</th><th>P/L %</th><th>MKT VALUE (USD)</th><th>ACTIONS</th>
 				</tr>
 			</thead>
-			<tbody id="tableBody"></tbody>
+
 		</table>
 	</div>
 
@@ -43,113 +76,12 @@
 			<span>&#8249;</span> 1/4 <span>&#8250;</span>
 		</div>
 	</div>
-	<p> <%= data  %> </p>
-	<%# s is an object, data is a list of objects%>
+
+</div>
+
 	
-	<% for (let s of data) { %>
-		<div class="stock-card">
-				<div class="top">
-					<div class="logo" style="background: <%= s.color %> "> </div>
-					<div class="names">
-						<div class="sym"> <%= s.sym %></div>
-						<div class="full-name"> <%= s.name %></div>
-					</div>
-					<div class="menu">&#8942;</div>
-				</div>
-				<div class="price-line">
-					<span class="price"> <%= s.o %></span>
-				</div>
-				<%# span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span> %>
-				<div class="stats">
-					<div>
-						<div class="stat-label">PRICE PAID</div>
-						<div class="stat-val"><%= s.o %></div>
-					</div>
-					<div>
-						<div class="stat-label">QTY</div>
-						<div class="stat-val"><%= s.v%></div>
-					</div>
-					<div>
-						<div class="stat-label">RETURN</div>
-						<%# <div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div> %>
-					</div>
-				</div>
-			</div>
-	</div>
-	<% } %> 
 	
 <script>
-	
-// const stocks = [
-// 	// {sym:"AAPL", name:"Apple Inc", price:182.39, chg:-1.18, chgPct:-2.18, pricePaid:191.22, qty:100, ret:-9.15, color:"#8a90a3"},
-// 	// {sym:"BAC", name:"Bank Of America Corporation", price:38.56, chg:-0.73, chgPct:-0.28, pricePaid:33.34, qty:100, ret:8.01, color:"#e0453f"},
-// 	// {sym:"GOOG", name:"Alphabet Inc (Google) Clas...", price:169.49, chg:-1.22, chgPct:-2.99, pricePaid:153.94, qty:100, ret:-3.55, color:"#f2b705"},
-// 	// {sym:"MCD", name:"McDonald's Corporation", price:270.75, chg:1.04, chgPct:2.80, pricePaid:290.14, qty:100, ret:-3.98, color:"#e0453f"},
-// 	// {sym:"NFLX", name:"Netflix, Inc.", price:609.33, chg:-0.45, chgPct:2.76, pricePaid:572.52, qty:100, ret:8.01, color:"#1d1d1d"},
-// 	// {sym:"SPOT", name:"Spotify Techn...", price:294.62, chg:0, chgPct:0, pricePaid:216.78, qty:100, ret:0, color:"#1fa06b"},
-// ];
-
-
-const cardsRow = document.getElementById("cardsRow");
-
-		<div class="stock-card">
-			<div class="top">
-				<div class="logo" style="background:${s.color}">${s.sym[0]}</div>
-				<div class="names">
-					<div class="sym">${s.sym}</div>
-					<div class="full-name">${s.name}</div>
-				</div>
-				<div class="menu">&#8942;</div>
-			</div>
-			<div class="price-line">
-				<span class="price">${s.price.toFixed(2)}</span>
-			</div>
-			<span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span>
-			<div class="stats">
-				<div>
-					<div class="stat-label">PRICE PAID</div>
-					<div class="stat-val">$${s.pricePaid.toFixed(2)}</div>
-				</div>
-				<div>
-					<div class="stat-label">QTY</div>
-					<div class="stat-val">${s.qty}</div>
-				</div>
-				<div>
-					<div class="stat-label">RETURN</div>
-					<div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div>
-				</div>
-			</div>
-		</div>
-
-const holdings = [];
-		
-
-	 
-
-
-	
-
-const tbody = document.getElementById("tableBody");
-holdings.forEach(h=>{
-	const plClass = h.pl >= 0 ? 'pos' : 'neg';
-	tbody.innerHTML += `
-		<tr>
-			<td>
-				<div class="sym-cell">
-					<svg class="dot" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
-					<span class="sym-name">${h.sym}</span>
-				</div>
-			</td>
-			<td>${h.qty.toFixed(2)}</td>
-			<td>$${h.paid.toFixed(2)}</td>
-			<td>${h.last.toFixed(2)}</td>
-			<td>0.00</td>
-			<td class="${plClass}">${h.pl>0?'':''}${h.pl.toFixed(2)}</td>
-			<td class="${plClass}">${h.pl>0?'+':''}${h.plPct.toFixed(2)}%</td>
-			<td>${h.mkt.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-			<td class="actions-cell">&#8942;&#9776;&#128196;</td>
-		</tr>`;
-});
 
 // Donut chart
 const donutData = [
