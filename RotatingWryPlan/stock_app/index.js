@@ -34,7 +34,7 @@ mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
     },
     watchlist: {
       type: [String], // e.g. ["AAPL", "TSLA"]
-      default: [],
+      default: [ ],
     },
   },
   { timestamps: true } // adds createdAt and updatedAt
@@ -132,11 +132,31 @@ async function appleStats(a) {
 				limit: "120"
 			}
 		);
-		console.log('Response:', response["results"].at(-1));
-	 return response["results"].at(-1)
+		var results = response["results"]
+		var last = results.at(-1)
+		last["prev close"] = results.length > 1 ? results.at(-2).c : last.o
+		console.log('Response:', last);
+		return last
 	} catch (e) {
 		console.error('An error happened:', e);
 	}
+}
+
+// portfolio stocks + latest price info, used for the cards in sim.ejs
+async function portfolioCards() {
+	var cards = []
+	for (let s of portfolio["stocks"]) {
+		var card = {...s}
+		var stats = await appleStats(s["ticker"])
+		if (stats) {
+			card["price"] = stats.c
+			card["chg"] = stats.c - stats["prev close"]
+			card["chgPct"] = card["chg"] / stats["prev close"] * 100
+			card["ret"] = (stats.c - s["cost basis"]) / s["cost basis"] * 100
+		}
+		cards.push(card)
+	}
+	return cards
 }
 
 
@@ -147,20 +167,9 @@ app.get('/', (req, res) => {
 })
 
 app.get('/sim',async (req,res)=>{
-	var stockData = await appleStats("AAPL")
-	var nKey = "color"
-	stockData[nKey] = "blue"
-	nKey = "name"
-	stockData[nKey] = "apple"
-	
-	var stockData2 = []
-	stockData2.push(stockData)
-	
-	// add stuff to dictionary that is used in sim.ejs
-
-	
-	console.log("data:", stockData2)
-	res.render("sim",{data:stockData2,port:portfolio})
+	var cards = await portfolioCards()
+	console.log("cards:", cards)
+	res.render("sim",{cards:cards})
 })
 
 app.post('/sim',async (req,res) =>{
@@ -173,7 +182,8 @@ app.post('/sim',async (req,res) =>{
 	stockData[nKey] = "apple"
 	var stockData2 = []
 	stockData2.push(stockData)
-	res.render("sim",{data:stockData2})
+	var cards = await portfolioCards()
+	res.render("sim",{data:stockData2,cards:cards})
 })
 
 app.get('/login', (req,res) => {
