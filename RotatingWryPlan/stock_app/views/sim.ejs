@@ -8,7 +8,44 @@
 </head>
 <body>
 
-<div class="cards-row" id="cardsRow"></div>
+<div class="cards-row" id="cardsRow">
+	<% for (let s of cards) { %>
+		<div class="stock-card">
+			<div class="top">
+				<div class="logo" style="background: <%= s.color %>"></div>
+				<div class="names">
+					<div class="sym"><%= s.ticker %></div>
+					<div class="full-name"><%= s.name %></div>
+				</div>
+				<div class="menu">&#8942;</div>
+			</div>
+			<div class="price-line">
+				<span class="price"><%= s.price != null ? "$" + s.price.toFixed(2) : "—" %></span>
+				<% if (s.chg != null) { %>
+					<span class="chg <%= s.chg >= 0 ? 'up' : 'down' %>"><%= s.chg >= 0 ? '▲' : '▼' %> <%= Math.abs(s.chg).toFixed(2) %> (<%= s.chgPct.toFixed(2) %>%)</span>
+				<% } %>
+			</div>
+			<div class="stats">
+				<div>
+					<div class="stat-label">PRICE PAID</div>
+					<div class="stat-val">$<%= s["cost basis"].toFixed(2) %></div>
+				</div>
+				<div>
+					<div class="stat-label">QTY</div>
+					<div class="stat-val"><%= s.own %></div>
+				</div>
+				<div>
+					<div class="stat-label">RETURN</div>
+					<% if (s.ret != null) { %>
+						<div class="stat-val <%= s.ret >= 0 ? 'up' : 'down' %>"><%= s.ret.toFixed(2) %>%</div>
+					<% } else { %>
+						<div class="stat-val">—</div>
+					<% } %>
+				</div>
+			</div>
+		</div>
+	<% } %>
+</div>
 
 <form action = "/sim" method = "POST">
 	<input name = "ticker" type = "text"></input>
@@ -20,35 +57,6 @@
 		<table>
 
 			<tbody id="tableBody">
-				<% for (let s of port["stocks"]) { %>
-					<div class="stock-card">
-					<div class="top">
-						<div class="logo" style="background: <%= s.color %> "> </div>
-						<div class="names">
-							<div class="sym"> <%= s.sym %></div> 
-							<div class="full-name"> <%= s.ticker %></div>
-						</div>
-						<div class="menu">&#8942;</div>
-					</div>
-					<div class="price-line">
-						<span class="price"> <%= s["cost basis"] %></span>
-					</div>
-					<%# span class="chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(s.chg).toFixed(2)}% (${s.chgPct.toFixed(2)})</span> %>
-					<div class="stats">
-						<div>
-							<div class="stat-label">PRICE PAID</div>
-							<div class="stat-val"><%= s["cost basis"] %></div>
-						</div>
-						<div>
-							<div class="stat-label">QTY</div>
-							<div class="stat-val"><%= s.own%></div>
-						</div>
-						<div>
-							<div class="stat-label">RETURN</div>
-							<%# <div class="stat-val ${s.ret>=0?'up':'down'}">${s.ret.toFixed(2)}%</div> %>
-						</div>
-					</div>
-				<% } %> 
 			</tbody>
 
 			<thead>
