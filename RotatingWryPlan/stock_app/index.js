@@ -1,6 +1,54 @@
 import express from "express"
 import 'dotenv/config';
+import mongoose from "mongoose"
+const dbURI = process.env.MONGO_URL;
 const app = express()
+var userSchema = "";
+var userModel = null;
+mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
+ console.log(" ===== bruh: connected ======")
+
+ userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email address"],
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
+      select: false, // excluded from queries by default
+    },
+    watchlist: {
+      type: [String], // e.g. ["AAPL", "TSLA"]
+      default: [],
+    },
+  },
+  { timestamps: true } // adds createdAt and updatedAt
+);
+//const Kitten = mongoose.model('Kitten', kittySchema);
+userModel = mongoose.model("User",userSchema)
+})
+.catch((error) => {
+	console.log("=====bruh: mongo connection error======")
+	console.log(error)
+})
+
+
+
 app.use(express.urlencoded({extended:true}))
 const key = process.env.MASSIVE_API_KEY
 var portfolio = {
@@ -126,6 +174,21 @@ app.post('/sim',async (req,res) =>{
 	var stockData2 = []
 	stockData2.push(stockData)
 	res.render("sim",{data:stockData2})
+})
+
+app.get('/login', (req,res) => {
+	res.render("login")
+})
+
+app.get('/signup',(req,res) => {
+	res.render("signup")
+})
+
+app.post('/signup',async (req,res)=>{
+	console.log(req.body)
+	const user1 = new userModel({username : req.body["username"], email: req.body["email"],password: req.body["password"]});
+	var result = await user1.save()
+	res.send("hi")
 })
 
 app.listen(3000, () => {
