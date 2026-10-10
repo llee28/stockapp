@@ -47,10 +47,6 @@
 	<% } %>
 </div>
 
-<form action = "/sim" method = "POST">
-	<input name = "ticker" type = "text"></input>
-	<input type = "submit"></input>
-</form>
 
 <div class="main-grid">
 	<div class="table-card">
@@ -86,10 +82,39 @@
 	</div>
 
 </div>
+<div>
+	<input>
+	<button id = "myButton"></button>
+</div>
+//search bar
+//stock dropdown
+// volume, 52 week high, days high, week low, etc
+// maybe graph?
+// buy + quantity
+<div id="myModal" class = "modal">
+
+	<div class = "modal-content">
+		<span class="close">&times;</span>
+		<p>test</p>
+	</div>
+
+</div>
 
 	
 	
 <script>
+	//modal code
+	var modal = document.getElementById("myModal")
+	var btn = document.getElementById("myButton")
+	btn.onclick = function() {
+		modal.style.display = "block";
+	}
+
+	window.onclick = function(event) {
+		if(event.target == modal) {
+			modal.style.display = "none";
+		}
+	}
 
 // Donut chart
 const donutData = [
