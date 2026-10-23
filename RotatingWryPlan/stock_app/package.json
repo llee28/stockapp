@@ -11,9 +11,12 @@
   "description": "",
   "dependencies": {
     "@massive.com/client-js": "^10.8.0",
+    "connect-mongodb-session": "^5.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.1",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "mongoose": "^9.10.1"
   }
 }

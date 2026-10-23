@@ -1,10 +1,30 @@
 import express from "express"
 import 'dotenv/config';
 import mongoose from "mongoose"
+import cookieParser from "cookie-parser"
 const dbURI = process.env.MONGO_URL;
+import crypto from "crypto" 
+import session from "express-session"
+import connectMongoDBSession from 'connect-mongodb-session'
+const MongoDBSession = connectMongoDBSession(session)
 const app = express()
 var userSchema = "";
 var userModel = null;
+
+var localSessionData = {} 
+/* 
+
+format for 
+
+localSessionData = {
+
+ cookievalue1 : { userdata1 },
+ cookievalue2 : { userdata2 }
+
+}
+
+*/ 
+
 mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
  console.log(" ===== bruh: connected ======")
 
@@ -47,9 +67,30 @@ userModel = mongoose.model("User",userSchema)
 	console.log(error)
 })
 
+const store = new MongoDBSession({
+	uri: dbURI,
+	collection: 'mySessions'
+})
 
 
 app.use(express.urlencoded({extended:true}))
+app.use(session({
+	secret: "stocksign",
+	resave: false,
+	saveUninitialized: false,
+	store: store,
+	rolling: true, // optional: resets the timer on each request (idle timeout)
+	cookie: {
+		maxAge: 1000 * 60 * 60, // 1 hour
+	},
+}))
+const iAuth = (req,res,next) => {
+	if(req.session.isAuth){
+		next()
+	} else{
+		res.redirect("/login")
+	}
+}
 const key = process.env.MASSIVE_API_KEY
 var portfolio = {
 	stocks:[
@@ -80,6 +121,7 @@ var stock = ""
 
 app.use(express.static("public"));
 app.set("view engine", "ejs");
+app.use(cookieParser())
 async function getApiData(){
 	try {
 		const response = await rest.getStocksAggregates(
@@ -94,7 +136,7 @@ async function getApiData(){
 				limit: "10"
 			}
 		)
-		console.log('Response:',response);
+		//console.log('Response:',response);
 		
 	} catch(e){
 		console.error('An error happened',e)
@@ -113,7 +155,7 @@ async function example_listTickers(){
 				search:"apple"
 			}
 		);
-		console.log('Response:',response);
+		// console.log('Response:',response);
 	} catch (e){
 		console.error('An error happened:', e)
 	}
@@ -135,7 +177,7 @@ async function appleStats(a) {
 		var results = response["results"]
 		var last = results.at(-1)
 		last["prev close"] = results.length > 1 ? results.at(-2).c : last.o
-		console.log('Response:', last);
+		// console.log('Response:', last);
 		return last
 	} catch (e) {
 		console.error('An error happened:', e);
@@ -166,16 +208,33 @@ app.get('/', (req, res) => {
 	res.render("index")
 })
 
-app.get('/sim',async (req,res)=>{
+app.get('/sim', iAuth, async (req,res)=>{
+	
+	// if (req.cookies["cookiename"] in localSessionData){
+	// 	var cards = await portfolioCards()
+	// 	// console.log("cards:", cards)
+	// 	res.render("sim",{cards:cards})
+	// }else{
+	// 	res.redirect("/login")
+	// }
 	var cards = await portfolioCards()
-	console.log("cards:", cards)
 	res.render("sim",{cards:cards})
 })
 
-app.post('/sim',async (req,res) =>{
+app.post('/sim',iAuth, async (req,res) =>{
+	/**
+	 * change the current user schema for this to work:
+	 * 1. add money,
+	 * 2. add portfolio to track stocks and amount of stocks a user owns
+	 * 
+	 * 
+	 * modify the sim post route such that:
+	 * 1. inspect if cookie is valid ( to verify if the user is login)
+	 * 2. if valid check if the user can actual afford the order
+	 * 3. then write/ update the stock data 
+	 */
 	let info = req.body
 	var stockData = await appleStats(info["ticker"])
-	console.log ("stockData post:",stockData)
 	var nKey = "color"
 	stockData[nKey] = "blue"
 	nKey = "name"
@@ -190,15 +249,73 @@ app.get('/login', (req,res) => {
 	res.render("login")
 })
 
+app.post('/login',async (req,res) => {
+	//write login logic 
+	// 1. extract data from form in request body
+	// 2. check if username exist in DB
+	// 3. if it exist then compare password from form against database password
+
+	var info = req.body // 
+	var result = await userModel.find({
+		email : info["email"],
+		password: info["password"],
+	})
+
+	console.log("result:",result)
+	let isAuth; 
+
+	if (result.length == 1){
+		isAuth= true
+		let uuid = crypto.randomUUID()
+
+		localSessionData[uuid] = {
+			"private userdata" : "some private info"
+		}
+
+		console.log("set cookie!")
+	}else{
+		isAuth= false
+	}
+	
+	if (isAuth){
+		req.session.isAuth = true
+		res.redirect("/sim")
+
+	}else{
+		res.send("login info incorrect")
+	}
+})
+
+
 app.get('/signup',(req,res) => {
 	res.render("signup")
 })
 
 app.post('/signup',async (req,res)=>{
-	console.log(req.body)
-	const user1 = new userModel({username : req.body["username"], email: req.body["email"],password: req.body["password"]});
-	var result = await user1.save()
-	res.send("hi")
+	// console.log(req.body)
+	const {username, email,password} = req.body;
+	console.log({email})
+	let user = await userModel.findOne({email});
+	if (user){
+		return res.redirect("/signup")
+	}
+	user = new userModel({
+		username,
+		email,
+		password
+	})
+	var result = await user.save()
+	res.redirect("/login")
+	// const user1 = new userModel({username : req.body["username"], email: req.body["email"],password: req.body["password"]});
+	// var result = await user1.save()
+	// res.send("hi")
+})
+app.post("/logout",(req,res) => {
+	res.clearCookie("connect.sid")
+	req.session.destroy((err) =>{
+		if(err) throw err;
+		res.redirect("/")
+	})
 })
 
 app.listen(3000, () => {
