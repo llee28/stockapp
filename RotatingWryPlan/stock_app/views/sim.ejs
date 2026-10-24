@@ -8,52 +8,9 @@
 </head>
 <body>
 
-<div class="cards-row" id="cardsRow">
-	<% for (let s of cards) { %>
-		<div class="stock-card">
-			<div class="top">
-				<div class="logo" style="background: <%= s.color %>"></div>
-				<div class="names">
-					<div class="sym"><%= s.ticker %></div>
-					<div class="full-name"><%= s.name %></div>
-				</div>
-				<div class="menu">&#8942;</div>
-			</div>
-			<div class="price-line">
-				<span class="price"><%= s.price != null ? "$" + s.price.toFixed(2) : "—" %></span>
-				<% if (s.chg != null) { %>
-					<span class="chg <%= s.chg >= 0 ? 'up' : 'down' %>"><%= s.chg >= 0 ? '▲' : '▼' %> <%= Math.abs(s.chg).toFixed(2) %> (<%= s.chgPct.toFixed(2) %>%)</span>
-				<% } %>
-			</div>
-			<div class="stats">
-				<div>
-					<div class="stat-label">PRICE PAID</div>
-					<div class="stat-val">$<%= s["cost basis"].toFixed(2) %></div>
-				</div>
-				<div>
-					<div class="stat-label">QTY</div>
-					<div class="stat-val"><%= s.own %></div>
-				</div>
-				<div>
-					<div class="stat-label">RETURN</div>
-					<% if (s.ret != null) { %>
-						<div class="stat-val <%= s.ret >= 0 ? 'up' : 'down' %>"><%= s.ret.toFixed(2) %>%</div>
-					<% } else { %>
-						<div class="stat-val">—</div>
-					<% } %>
-				</div>
-			</div>
-		</div>
-	<% } %>
-</div>
-
-
 <div class="main-grid">
 	<div class="table-card">
 		<table>
-
-			<tbody id="tableBody">
-			</tbody>
 
 			<thead>
 				<tr>
@@ -61,6 +18,45 @@
 					<th>DAY'S CHG</th><th>P/L</th><th>P/L %</th><th>MKT VALUE (USD)</th><th>ACTIONS</th>
 				</tr>
 			</thead>
+
+			<tbody id="tableBody">
+				<% const money = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+				<% for (let s of cards) { %>
+					<% const pl = s.price != null ? (s.price - s["cost basis"]) * s.own : null %>
+					<tr>
+						<td>
+							<div class="sym-cell">
+								<span class="dot" style="background: <%= s.color %>"></span>
+								<div>
+									<div class="sym-name"><%= s.ticker %></div>
+									<% if (s.name) { %>
+										<div class="full-name"><%= s.name %></div>
+									<% } %>
+								</div>
+							</div>
+						</td>
+						<td><%= s.own %></td>
+						<td><%= money(s["cost basis"]) %></td>
+						<td><%= s.price != null ? money(s.price) : "—" %></td>
+						<% if (s.chg != null) { %>
+							<td class="<%= s.chg >= 0 ? 'pos' : 'neg' %>"><%= s.chg >= 0 ? '▲' : '▼' %> <%= Math.abs(s.chg).toFixed(2) %> (<%= Math.abs(s.chgPct).toFixed(2) %>%)</td>
+						<% } else { %>
+							<td>—</td>
+						<% } %>
+						<% if (pl != null) { %>
+							<td class="<%= pl >= 0 ? 'pos' : 'neg' %>"><%= pl >= 0 ? "+" : "" %><%= money(pl) %></td>
+							<td class="<%= s.ret >= 0 ? 'pos' : 'neg' %>"><%= s.ret >= 0 ? "+" : "" %><%= s.ret.toFixed(2) %>%</td>
+							<td><%= money(s.price * s.own) %></td>
+						<% } else { %>
+							<td>—</td><td>—</td><td>—</td>
+						<% } %>
+						<td class="actions-cell">&#8942;</td>
+					</tr>
+				<% } %>
+				<% if (cards.length === 0) { %>
+					<tr><td colspan="9" class="empty">No positions yet</td></tr>
+				<% } %>
+			</tbody>
 
 		</table>
 	</div>
@@ -84,7 +80,7 @@
 </div>
 <div>
 	<input>
-	<button id = "myButton"></button>
+	<button id = "myButton">BUY</button>
 </div>
 <form action="/logout" method="POST">
 	<button>Logout</button>
@@ -98,12 +94,16 @@
 
 	<div class = "modal-content">
 		<span class="close">&times;</span>
-		<form action="/sim",method="POST">
+		<form action="/sim" method="POST">
 			<label for="buy">Buy Stock</label>
-			<input name = "buy" type = "text"></input>
+			<div class="ticker-search">
+				<input id="buy" name="ticker" type="text" placeholder="Search ticker or company" autocomplete="off"
+					role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tickerList">
+				<ul class="ticker-list" id="tickerList" role="listbox" hidden></ul>
+			</div>
 			<p></p>
 			<label for="quantity">Quantity</label>
-			<input name = "quantity" type = "text"></input>
+			<input id="quantity" name = "quantity" type = "text"></input>
 			<p></p>
 			<input type = "submit"></input>
 		</form>
@@ -126,6 +126,137 @@
 			modal.style.display = "none";
 		}
 	}
+
+// Ticker search dropdown (buy modal)
+const tickerInput = document.getElementById("buy")
+const tickerList = document.getElementById("tickerList")
+let tickers = []
+let tickersRequested = false
+let matches = []
+let activeIndex = -1
+
+// stocks.json is ~800KB, so only fetch it the first time the search box is used
+function loadTickers() {
+	if (tickersRequested) return
+	tickersRequested = true
+	fetch("/stocks.json")
+		.then(res => res.json())
+		.then(data => {
+			tickers = Object.values(data).map(t => ({ ...t, search: t.title.toUpperCase() }))
+			if (document.activeElement === tickerInput) filterTickers()
+		})
+		.catch(err => console.error("Could not load stocks.json", err))
+}
+
+function filterTickers() {
+	const q = tickerInput.value.trim().toUpperCase()
+	if (!q) return hideTickerList()
+
+	// best matches first: exact ticker, ticker prefix, company name prefix, company name contains
+	const ranked = [[], [], [], []]
+	for (const t of tickers) {
+		if (t.ticker === q) ranked[0].push(t)
+		else if (t.ticker.startsWith(q)) ranked[1].push(t)
+		else if (t.search.startsWith(q)) ranked[2].push(t)
+		else if (t.search.includes(q)) ranked[3].push(t)
+	}
+	matches = ranked.flat().slice(0, 8)
+	activeIndex = matches.length ? 0 : -1
+	renderTickerList()
+}
+
+function renderTickerList() {
+	tickerList.innerHTML = ""
+	if (matches.length === 0) {
+		const li = document.createElement("li")
+		li.className = "t-empty"
+		li.textContent = tickers.length ? "No matching tickers" : "Loading tickers…"
+		tickerList.appendChild(li)
+	}
+	matches.forEach((t, i) => {
+		const li = document.createElement("li")
+		li.id = "ticker-opt-" + i
+		li.setAttribute("role", "option")
+		const sym = document.createElement("span")
+		sym.className = "t-sym"
+		sym.textContent = t.ticker
+		const name = document.createElement("span")
+		name.className = "t-name"
+		name.textContent = t.title
+		li.append(sym, name)
+		// mousedown (not click) so the input's blur doesn't close the list first
+		li.addEventListener("mousedown", e => {
+			e.preventDefault()
+			selectTicker(t)
+		})
+		tickerList.appendChild(li)
+	})
+	tickerList.hidden = false
+	tickerInput.setAttribute("aria-expanded", "true")
+	updateActive()
+}
+
+function updateActive() {
+	tickerList.querySelectorAll("[role=option]").forEach((li, i) => li.classList.toggle("active", i === activeIndex))
+	const active = document.getElementById("ticker-opt-" + activeIndex)
+	if (active) {
+		active.scrollIntoView({ block: "nearest" })
+		tickerInput.setAttribute("aria-activedescendant", active.id)
+	} else {
+		tickerInput.removeAttribute("aria-activedescendant")
+	}
+}
+
+function hideTickerList() {
+	matches = []
+	activeIndex = -1
+	tickerList.hidden = true
+	tickerInput.setAttribute("aria-expanded", "false")
+	tickerInput.removeAttribute("aria-activedescendant")
+}
+
+function selectTicker(t) {
+	tickerInput.value = t.ticker
+	tickerInput.setCustomValidity("")
+	hideTickerList()
+	document.getElementById("quantity").focus()
+}
+
+tickerInput.addEventListener("focus", () => {
+	loadTickers()
+	filterTickers()
+})
+tickerInput.addEventListener("input", () => {
+	tickerInput.setCustomValidity("")
+	filterTickers()
+})
+tickerInput.addEventListener("blur", hideTickerList)
+tickerInput.addEventListener("keydown", e => {
+	if (tickerList.hidden) return
+	if ((e.key === "ArrowDown" || e.key === "ArrowUp") && matches.length) {
+		e.preventDefault()
+		const step = e.key === "ArrowDown" ? 1 : -1
+		activeIndex = (activeIndex + step + matches.length) % matches.length
+		updateActive()
+	} else if (e.key === "Enter" && activeIndex >= 0) {
+		e.preventDefault()
+		selectTicker(matches[activeIndex])
+	} else if (e.key === "Escape") {
+		hideTickerList()
+	}
+})
+
+// only let the form submit a ticker that's actually in stocks.json
+tickerInput.form.addEventListener("submit", e => {
+	const q = tickerInput.value.trim().toUpperCase()
+	if (tickers.length && !tickers.some(t => t.ticker === q)) {
+		e.preventDefault()
+		tickerInput.setCustomValidity("Pick a ticker from the list")
+		tickerInput.reportValidity()
+		return
+	}
+	tickerInput.value = q
+})
 
 // Donut chart
 const donutData = [

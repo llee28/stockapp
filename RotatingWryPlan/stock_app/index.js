@@ -233,6 +233,7 @@ app.post('/sim',iAuth, async (req,res) =>{
 	 * 2. if valid check if the user can actual afford the order
 	 * 3. then write/ update the stock data 
 	 */
+	console.log(req.body)
 	let info = req.body
 	var stockData = await appleStats(info["ticker"])
 	var nKey = "color"
