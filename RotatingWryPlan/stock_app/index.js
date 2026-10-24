@@ -142,6 +142,20 @@ async function getApiData(){
 		console.error('An error happened',e)
 	}
 }
+async function appleOpen() {
+  try {
+    const response = await rest.getStocksOpenClose(
+      {
+        stocksTicker: "AAPL",
+        date: "2026-10-23",
+        adjusted: "true"
+      }
+    );
+    console.log('Response:', response);
+  } catch (e) {
+    console.error('An error happened:', e);
+  }
+}
 
 async function example_listTickers(){
 	try{
@@ -160,15 +174,15 @@ async function example_listTickers(){
 		console.error('An error happened:', e)
 	}
 }
-async function appleStats(a) {
+async function appleStats(a,date) {
 	try {
 		const response = await rest.getStocksAggregates(
 			{
 				stocksTicker: a,
 				multiplier: "1",
 				timespan: "day",
-				from: "2026-07-30",
-				to: "2026-08-29",
+				from: date,
+				to: date,
 				adjusted: "true",
 				sort: "asc",
 				limit: "120"
@@ -189,7 +203,7 @@ async function portfolioCards() {
 	var cards = []
 	for (let s of portfolio["stocks"]) {
 		var card = {...s}
-		var stats = await appleStats(s["ticker"])
+		var stats = await appleStats(s["ticker"],"2026-10-23")
 		if (stats) {
 			card["price"] = stats.c
 			card["chg"] = stats.c - stats["prev close"]
@@ -235,7 +249,7 @@ app.post('/sim',iAuth, async (req,res) =>{
 	 */
 	console.log(req.body)
 	let info = req.body
-	var stockData = await appleStats(info["ticker"])
+	var stockData = await appleStats(info["ticker"],"2026-10-23")
 	var nKey = "color"
 	stockData[nKey] = "blue"
 	nKey = "name"
@@ -266,6 +280,9 @@ app.post('/login',async (req,res) => {
 	let isAuth; 
 
 	if (result.length == 1){
+		req.session.user = {
+			email: info["email"]
+		}
 		isAuth= true
 		let uuid = crypto.randomUUID()
 
@@ -317,6 +334,25 @@ app.post("/logout",(req,res) => {
 		if(err) throw err;
 		res.redirect("/")
 	})
+})
+
+// app.get("/buy",(req,res)=>{
+	
+// })
+app.get("/buy",(req,res)=>{
+	res.send("hello world")
+	appleOpen()
+})
+app.post("/buy",async (req,res)=>{
+	let info = req.body
+	var foundUser = await userModel.findOne({email: req.session.user.email})
+	var bru = await appleStats(info["buy"],"2026-10-23")
+	
+	
+	console.log(request)
+	foundUser.watchlist.push({"ticker":info["buy"],"bought":info["quantity"],"price":bru["o"]})
+	foundUser.save()
+	res.redirect("/sim")
 })
 
 app.listen(3000, () => {
