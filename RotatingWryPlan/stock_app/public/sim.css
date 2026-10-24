@@ -20,53 +20,6 @@
 	}
 	h1,h2,h3{margin:0;}
 
-	/* ---- Stock cards row ---- */
-	.cards-row{
-		display:grid;
-		grid-template-columns:repeat(6,1fr);
-		gap:14px;
-		margin-bottom:20px;
-	}
-	.stock-card{
-		background:var(--card);
-		border-radius:12px;
-		padding:14px 16px;
-		box-shadow:0 1px 2px rgba(20,20,40,0.05);
-	}
-	.stock-card .top{
-		display:flex;
-		align-items:center;
-		gap:8px;
-		margin-bottom:10px;
-	}
-	.stock-card .logo{
-		width:22px;height:22px;border-radius:50%;
-		display:flex;align-items:center;justify-content:center;
-		font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
-	}
-	.stock-card .names{flex:1;min-width:0;}
-	.stock-card .sym{font-size:13px;font-weight:700;color:var(--ink);}
-	.stock-card .full-name{
-		font-size:10.5px;color:var(--muted);
-		white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-	}
-	.stock-card .menu{color:var(--muted);font-size:14px;}
-	.stock-card .price-line{
-		display:flex;align-items:baseline;gap:8px;margin-bottom:2px;
-	}
-	.stock-card .price{font-size:19px;font-weight:700;}
-	.stock-card .chg{font-size:12px;font-weight:600;}
-	.stock-card .chg.up{color:var(--green);}
-	.stock-card .chg.down{color:var(--red);}
-	.stock-card .stats{
-		display:flex;justify-content:space-between;
-		margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
-	}
-	.stock-card .stat-label{font-size:9px;color:var(--muted);letter-spacing:.03em;margin-bottom:3px;}
-	.stock-card .stat-val{font-size:11.5px;font-weight:600;}
-	.stock-card .stat-val.up{color:var(--green);}
-	.stock-card .stat-val.down{color:var(--red);}
-
 	/* ---- Main content grid ---- */
 	.main-grid{
 		display:grid;
@@ -80,7 +33,7 @@
 		background:var(--card);
 		border-radius:12px;
 		box-shadow:0 1px 2px rgba(20,20,40,0.05);
-		overflow:hidden;
+		overflow-x:auto;
 	}
 	table{width:100%;border-collapse:collapse;font-size:13px;}
 	thead th{
@@ -102,11 +55,13 @@
 	tbody tr:last-child td{border-bottom:none;}
 	tbody tr:hover{background:#fafbff;}
 	.sym-cell{display:flex;align-items:center;gap:10px;text-align:left;}
-	.sym-cell .dot{width:16px;height:16px;color:var(--purple);flex-shrink:0;}
+	.sym-cell .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 	.sym-cell .sym-name{font-weight:700;}
-	.pos{color:var(--green);}
-	.neg{color:var(--red);}
-	.actions-cell{color:var(--muted);letter-spacing:2px;}
+	.sym-cell .full-name{font-size:11px;color:var(--muted);margin-top:2px;}
+	.pos{color:var(--green);font-weight:600;}
+	.neg{color:var(--red);font-weight:600;}
+	.actions-cell{color:var(--muted);letter-spacing:2px;cursor:pointer;}
+	tbody td.empty{text-align:center;color:var(--muted);padding:28px 16px;}
 
 	/* ---- Side panel ---- */
 	.side-panel{
@@ -168,6 +123,71 @@
   padding: 20px;
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* Ticker search dropdown */
+.ticker-search {
+  position: relative;
+  max-width: 360px;
+}
+
+.ticker-search input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.ticker-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(20,20,40,0.12);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.ticker-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ticker-list li:hover,
+.ticker-list li.active {
+  background: #f1effd;
+}
+
+.ticker-list .t-sym {
+  font-weight: 700;
+  min-width: 60px;
+}
+
+.ticker-list .t-name {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticker-list li.t-empty {
+  color: var(--muted);
+  cursor: default;
+  background: none;
 }
 
 /* The Close Button */
