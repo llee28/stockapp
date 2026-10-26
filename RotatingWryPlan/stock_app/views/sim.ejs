@@ -7,7 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 </head>
 <body>
-
+<p id = "totalcash">
+	Total cash : <%= cash %>, Available cash: <%= availableCash %>
+</p>
 <div class="main-grid">
 	<div class="table-card">
 		<table>
@@ -22,7 +24,7 @@
 			<tbody id="tableBody">
 				<% const money = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
 				<% for (let s of cards) { %>
-					<% const pl = s.price != null ? (s.price - s["cost basis"]) * s.own : null %>
+					<% const pl = s.price != null ? (s.price - s["cost basis"]) * s.bought : null %>
 					<tr>
 						<td>
 							<div class="sym-cell">
@@ -35,7 +37,7 @@
 								</div>
 							</div>
 						</td>
-						<td><%= s.own %></td>
+						<td><%= s.bought %></td>
 						<td><%= money(s["cost basis"]) %></td>
 						<td><%= s.price != null ? money(s.price) : "—" %></td>
 						<% if (s.chg != null) { %>
@@ -46,7 +48,7 @@
 						<% if (pl != null) { %>
 							<td class="<%= pl >= 0 ? 'pos' : 'neg' %>"><%= pl >= 0 ? "+" : "" %><%= money(pl) %></td>
 							<td class="<%= s.ret >= 0 ? 'pos' : 'neg' %>"><%= s.ret >= 0 ? "+" : "" %><%= s.ret.toFixed(2) %>%</td>
-							<td><%= money(s.price * s.own) %></td>
+							<td><%= money(s.price * s.bought) %></td>
 						<% } else { %>
 							<td>—</td><td>—</td><td>—</td>
 						<% } %>
@@ -78,23 +80,18 @@
 	</div>
 
 </div>
-<div>
-	<input>
-	<button id = "myButton">BUY</button>
+<div class = stockDiv>
+	<button id = "myButton" class="stockButton">BUY</button>
+	<form action="/logout" method="POST">
+	<button class = "Logbutton">Logout</button>
+	</form>
 </div>
-<form action="/logout" method="POST">
-	<button>Logout</button>
-</form>
-//search bar
-//stock dropdown
-// volume, 52 week high, days high, week low, etc
-// maybe graph?
-// buy + quantity
+
 <div id="myModal" class = "modal">
 
 	<div class = "modal-content">
 		<span class="close">&times;</span>
-		<form action="/sim" method="POST">
+		<form action="/buy" method="POST">
 			<label for="buy">Buy Stock</label>
 			<div class="ticker-search">
 				<input id="buy" name="ticker" type="text" placeholder="Search ticker or company" autocomplete="off"

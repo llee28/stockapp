@@ -204,3 +204,25 @@
   text-decoration: none;
   cursor: pointer;
 }
+.stockDiv{
+	display:flex;
+	flex-direction:row;
+	gap:16px;
+}
+.stockButton{
+	border:2px;
+	background:white;
+	border-radius:8px;
+	font-size:12px;
+	font-weight:600;
+	padding:10px;
+}
+
+.Logbutton{
+	border:2px;
+	background:white;
+	border-radius:8px;
+	font-size:12px;
+	font-weight:600;
+	padding:10px;
+}

@@ -26,7 +26,6 @@ localSessionData = {
 */ 
 
 mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
- console.log(" ===== bruh: connected ======")
 
  userSchema = new mongoose.Schema(
   {
@@ -56,6 +55,10 @@ mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
       type: [String], // e.g. ["AAPL", "TSLA"]
       default: [ ],
     },
+	cash: {
+		type: Number,
+		default: 10000,
+	},
   },
   { timestamps: true } // adds createdAt and updatedAt
 );
@@ -63,7 +66,6 @@ mongoose.connect(dbURI, {dbName:"stockapp"}).then(() => {
 userModel = mongoose.model("User",userSchema)
 })
 .catch((error) => {
-	console.log("=====bruh: mongo connection error======")
 	console.log(error)
 })
 
@@ -93,22 +95,7 @@ const iAuth = (req,res,next) => {
 }
 const key = process.env.MASSIVE_API_KEY
 var portfolio = {
-	stocks:[
-		{
-			"ticker":"AAPL",
-			"own":15,
-			"cost basis":205,
-			"purchase date": new Date(2026,2,10,2,30),
-			"color": "blue",
-		},
-		{
-			"ticker":"SPCX",
-			"own":30,
-			"cost basis":150,
-			"purchase date": new Date(2026,2,10,2,31),
-			"color":"yellow",
-		},
-	]
+	stocks:[]
 	
 	
 }
@@ -122,36 +109,18 @@ var stock = ""
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.use(cookieParser())
-async function getApiData(){
-	try {
-		const response = await rest.getStocksAggregates(
-			{
-				stocksTicker:"AAPL",
-				multiplier:"1",
-				timespan:"day",
-				from:"2026-08-17",
-				to:"2026-08-21",
-				adjusted:"true",
-				sort:"asc",
-				limit: "10"
-			}
-		)
-		//console.log('Response:',response);
-		
-	} catch(e){
-		console.error('An error happened',e)
-	}
-}
-async function appleOpen() {
+
+async function appleOpen(ticker,date) {
   try {
+	console.log(ticker)
     const response = await rest.getStocksOpenClose(
       {
-        stocksTicker: "AAPL",
-        date: "2026-10-23",
+        stocksTicker: ticker,
+        date: date,
         adjusted: "true"
       }
     );
-    console.log('Response:', response);
+   return response;
   } catch (e) {
     console.error('An error happened:', e);
   }
@@ -215,24 +184,99 @@ async function portfolioCards() {
 	return cards
 }
 
+function getStocks(listStocks){
+	var tempList = []
+	if(!listStocks.length){
+		return listStocks
+	}
+	for(let i =0; i<listStocks.length; i++){
+		tempList.push(JSON.parse(listStocks[i]))
+	}
+	return tempList
+}
+function dateLogic(){
+	const date = new Date(); // Current date and time
+	const timeZone = 'America/Los_Angeles'
+	const day = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		weekday:"long"
+	}).format(date)
+	const ymd = new Intl.DateTimeFormat('en-CA',{
+		timeZone,
+		year:'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(date)
+	return [day,ymd]
+}
+function weekdayLogic(inputDate){
+	let splitDate = inputDate[1].split("-")
+	let finalDate = ""
+	
+	if(inputDate[0]=="Sunday"){
+		splitDate[2] = splitDate[2]-2
+		splitDate[2] = monthLogic(splitDate[2],splitDate)
+		splitDate[2] = String(splitDate[2])
+		finalDate = splitDate.join().replaceAll(",","-")
+	}
+	else if(inputDate[0]=="Monday"){
+		splitDate[2] = splitDate[2]-3
+		splitDate[2] = monthLogic(splitDate[2],splitDate)
+		splitDate[2] = String(splitDate[1])
+		finalDate = splitDate.join().replaceAll(",","-")
+	}
+	else{
+		splitDate[2] = splitDate[2]-1
+		splitDate[2] = monthLogic(splitDate[2],splitDate)
+		splitDate[2] = String(splitDate[2])
+		finalDate = splitDate.join().replaceAll(",","-")
+	}
+	return finalDate
+}
+function monthLogic(inputDay,inputSplit){
+	let temp = ""
+	let listThirtyOne = [1,3,5,7,8,10,12]
+	let listThirty = [4,6,9,11]
+	if(inputDay<1){
+		if(inputSplit[1].parseInt(10) in listThirtyOne){
+			temp = 31-Math.abs(inputDay)
+		}
+		else if(inputSplit[1].parseInt(10) in listThirty){
+			temp = 30-Math.abs(inputDay)
+		}
+		else if(inputSplit[1].parseInt(10) == 2){
+			temp = 28-Math.abs(inputDay)
+		}
+		return temp
+	}
+	if(inputDay<10){
+		inputDay="0"+inputDay
+	}
+	return inputDay
+}
 
 app.get('/', (req, res) => {
-	getApiData()
 	example_listTickers()
 	res.render("index")
 })
 
 app.get('/sim', iAuth, async (req,res)=>{
 	
-	// if (req.cookies["cookiename"] in localSessionData){
-	// 	var cards = await portfolioCards()
-	// 	// console.log("cards:", cards)
-	// 	res.render("sim",{cards:cards})
-	// }else{
-	// 	res.redirect("/login")
-	// }
+	let totalCash = 0
+	var foundUser = await userModel.findOne({email:req.session.user.email})
+	let userPort = getStocks(foundUser.watchlist)
+	portfolio["stocks"] = userPort
+
+	//get me the current price of all the ticker 
+	
+	// all the api with the date
+	for(let i=0;i<userPort.length;i++){
+		totalCash += userPort[i]["bought"]*userPort[i]["cost basis"]
+	}
+	totalCash += foundUser.cash
 	var cards = await portfolioCards()
-	res.render("sim",{cards:cards})
+
+	res.render("sim",{cards:cards,cash:totalCash,availableCash:foundUser.cash})
 })
 
 app.post('/sim',iAuth, async (req,res) =>{
@@ -332,7 +376,7 @@ app.post("/logout",(req,res) => {
 	res.clearCookie("connect.sid")
 	req.session.destroy((err) =>{
 		if(err) throw err;
-		res.redirect("/")
+		res.redirect("/login")
 	})
 })
 
@@ -340,18 +384,53 @@ app.post("/logout",(req,res) => {
 	
 // })
 app.get("/buy",(req,res)=>{
+	appleOpen("AAPL")
 	res.send("hello world")
-	appleOpen()
 })
 app.post("/buy",async (req,res)=>{
 	let info = req.body
+	console.log("info",info)
 	var foundUser = await userModel.findOne({email: req.session.user.email})
-	var bru = await appleStats(info["buy"],"2026-10-23")
+	var stockGet = await appleOpen(info["ticker"],weekdayLogic(dateLogic()))
+	let temp = 0;
+	let tempList = getStocks(foundUser.watchlist)
+	if(foundUser.cash >=Number(info["quantity"]*stockGet["open"])){
+		foundUser.cash = foundUser.cash-Number(info["quantity"]*stockGet["open"])
+		if(!tempList.length){
+			foundUser.watchlist.push(JSON.stringify({"ticker":info["ticker"],"bought":info["quantity"],"price":stockGet["open"],"cost basis":stockGet["open"],"color":["yellow"]}))
+	}
+		else{
+			for(let i=0;i<tempList.length;i++){
+				for(let key in tempList[i]){
+					if(tempList[i][key] == info["ticker"]){
+						temp = 1
+						let stockObj = getStocks(foundUser.watchlist)
+						stockObj[i]["bought"] = Number(stockObj[i]["bought"])+ Number(info["quantity"])
+						stockObj[i]["cost basis"] = (stockObj[i]["cost basis"]+stockGet["open"])/2
+						foundUser.watchlist[i] = JSON.stringify(stockObj[i])
+						
+					}
+				}
+			// console.log(tempList[i])
+			// if (info["ticker"] in tempList[i]){
+			// 	temp = 1
+			// 	console.log("found stock")
+			// 	tempList[i]["bought"] = tempList[i]["bought"] + tempList[i]["quantity"]
+			// 	tempList[i]["cost basis"] = (tempList[i]["cost basis"]+stockGet["open"])/2
+			// }
+	}
+		if(temp == 0){
+			foundUser.watchlist.push(JSON.stringify({"ticker":info["ticker"],"bought":info["quantity"],"price":stockGet["open"],"cost basis":stockGet["open"],"color":["yellow"]}))
+		}
+	}
+	}
+	else{
+		res.send("not enough cash")
+	}
 	
 	
-	console.log(request)
-	foundUser.watchlist.push({"ticker":info["buy"],"bought":info["quantity"],"price":bru["o"]})
-	foundUser.save()
+	
+	await foundUser.save()
 	res.redirect("/sim")
 })
 
